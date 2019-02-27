@@ -1,11 +1,10 @@
-package master
+package sendpb
 
 import (
     "net"
     "fmt"
     "time"
     "errors"
-//    "bytes"
     "io"
     "encoding/binary"
 )
