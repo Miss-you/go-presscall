@@ -1,13 +1,37 @@
 {
     "header":{
         "seq":1,
-        "cmd_type":20002
+        "cmd_type":20000
     },
     "req_tgwadm_vip_segment_list":{
         "type":2,
         "vipsegment":[
             {
                 "ip":"127.0.0.1",
+                "mask":24,
+                "type":0,
+                "ispid":200
+            }
+        ]
+    },
+    "req_tgwadm_set_conf": {
+        "status": 1,
+        "tcpactivetimeout": -1,
+        "tcpinactivetimeout": -1,
+        "udptimeout": -1,
+        "syncmasteractive": -1,
+        "syncmasterid": 1,
+        "syncmasterifn": "eth1",
+        "syncbackupactive": -1,
+        "syncbackupid": 1,
+        "syncbackupifn": "eth1",
+        "ldtype": 1,
+        "ldip": [
+            1, 2, 3
+        ],
+        "vipsegment":[
+            {
+                "ip":"9.9.9.9",
                 "mask":24,
                 "type":0,
                 "ispid":200
