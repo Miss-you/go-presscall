@@ -6,7 +6,6 @@ package sendpb
 import (
     "fmt"
 	"encoding/binary"
-	"encoding/json"
 	"log"
     "github.com/golang/protobuf/proto" 
 	"apigw-contrib/util/conf"
@@ -55,7 +54,8 @@ func addMagicBodySize(msg []byte) []byte {
     new_msg_data = append(new_msg_data, msg...)
    
     message := fmt.Sprintf("new_msg_size:%d", len(new_msg_data)) 
-    fmt.Println(message)
+    fmt.Println("message: ", message)
+    fmt.Println("new_msg_data: ", new_msg_data)
     return new_msg_data
 } 
 
@@ -71,35 +71,35 @@ func removeMagicBodySize(msg []byte) []byte {
 
 
 //func sendPbReq()
-func SendPbReq(req interface{}) (rsp proto.Message, err error) {
-	data, err := json.Marshal(req)
+func SendPbReq(req proto.Message, rsp proto.Message) (err error) {
+	data, err := proto.Marshal(req)
 	if err != nil {
         fmt.Println(err)
-        return rsp, err
+        return err
 	}
 
 	fullData := addMagicBodySize(data)
 
 	conn, err := masterConnect(SendConf.Ip, SendConf.Port, 15)
     if err != nil {
-        return rsp, err
+        return err
     }
 	defer conn.Close()
 	
 	err = sendMsg(conn, fullData)
     if err != nil {
-        return rsp, err
+        return err
 	}
 	
 	recv_buf := make([]byte, 1024)
     recv_len, err := recvMsg(conn, recv_buf)
     if err != nil {
-        return rsp, err
+        return err
 	}
 	
 	fmt.Println("recv_len:", recv_len)
-    real_msg := recv_buf[:recv_len]
+    real_msg := recv_buf[8:recv_len]
     err = proto.Unmarshal(real_msg, rsp)
     
-	return rsp, nil
+	return nil
 }

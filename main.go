@@ -28,6 +28,7 @@ func main() {
 	}
 
 	var req tgwadm.CtrlMsg 
+	var rsp tgwadm.CtrlMsg
 	ReadJson("pb.json", &req)
 	fmt.Println(req)
 
@@ -35,7 +36,7 @@ func main() {
 	fmt.Println(string(tmp))
 
 	//ctrlMsg
-	rsp, err := sendpb.SendPbReq(req)
+	err = sendpb.SendPbReq(&req, &rsp)
 	if err != nil {
 		fmt.Println(err)
 		return
