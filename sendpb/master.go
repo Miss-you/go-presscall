@@ -22,7 +22,7 @@ type SendConfInfo struct {
 var SendConf SendConfInfo
 
 func init() {
-	err := conf.InitConfig("sendpb.conf", SendConf)
+	err := conf.InitConfig("sendpb.conf", &SendConf)
 	if err != nil {
 		log.Fatal(err.Error())
 		return
@@ -78,13 +78,15 @@ func SendPbReq(req interface{}) (rsp proto.Message, err error) {
         return rsp, err
 	}
 
+	fullData := addMagicBodySize(data)
+
 	conn, err := masterConnect(SendConf.Ip, SendConf.Port, 15)
     if err != nil {
         return rsp, err
     }
 	defer conn.Close()
 	
-	err = sendMsg(conn, data)
+	err = sendMsg(conn, fullData)
     if err != nil {
         return rsp, err
 	}

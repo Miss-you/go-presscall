@@ -3,8 +3,8 @@ package main
 import (
 	"fmt"
 	"apigw-contrib/util/conf"
-	"go-presscall/pb/tgwadm"
-	"go-presscall/sendpb"
+	"github.com/Miss-you/go-presscall/pb/tgwadm"
+	"github.com/Miss-you/go-presscall/sendpb"
 	"os"
 	"encoding/json"
 )
