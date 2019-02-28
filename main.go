@@ -18,6 +18,7 @@ type PresscallInfo struct {
 }
 
 var PressConf PresscallInfo
+var svrRsp tgwadm.CtrlMsg
 
 func main() {
 	//init conf
@@ -32,8 +33,11 @@ func main() {
 	ReadJson("pb.json", &req)
 	fmt.Println(req)
 
-	tmp, _ := json.Marshal(req)
-	fmt.Println(string(tmp))
+	ReadJson("svrpb.json", &svrRsp)
+	fmt.Println(svrRsp)
+
+	//tmp, _ := json.Marshal(req)
+	//fmt.Println(string(tmp))
 
 	//ctrlMsg
 	err = sendpb.SendPbReq(&req, &rsp)
@@ -77,4 +81,48 @@ func ReadJson(confPath string, confVar interface{}) error {
 	}
 
 	return nil
+}
+
+
+//tcp server.
+func tcpServer() {
+    listen_sock, err := net.Listen("tcp", ":8001")
+    if err != nil {
+		log.Fatal("init tcp service failed.")
+	}
+    defer listen_sock.Close()
+
+    for {
+        new_conn, err := listen_sock.Accept()
+        if err != nil {
+            continue    
+        }
+        go recvConnMsg(new_conn)
+    }
+}
+
+
+func recvConnMsg(conn net.Conn) {
+	buf := make([]byte, 2048) 
+	defer conn.Close()
+	for {
+		_, err := sendpb.recvMsg(conn, buf)
+		if err != nil {
+			fmt.Println("recvConnMsg err: ", err)
+			return
+		}
+
+		data, err := proto.Marshal(svrRsp)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		fullData := sendpb.addMagicBodySize(data)
+		err = sendpb.sendMsg(conn, fullData)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}   
 }
