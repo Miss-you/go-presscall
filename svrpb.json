@@ -1,0 +1,20 @@
+{
+    "rsp_list":[
+        {
+            "type": 20000,
+            "msg": {
+                "header":{
+                    "seq":2,
+                    "cmd_type":20001
+                },
+                "rsp_tgwadm_set_conf":{
+                    "ret_msg": {
+                        "retcode": 1993,
+                        "retmsg": "hello world."
+                    }, 
+                    "version": "yousali"
+                }
+            }
+        }
+    ]
+}

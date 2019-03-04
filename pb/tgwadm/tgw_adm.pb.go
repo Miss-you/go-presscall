@@ -23,7 +23,8 @@ package tgwadm
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
 import math "math"
-import common "github.com/Miss-you/go-presscall/pb/common"
+//import common "github.com/Miss-you/go-presscall/pb/common"
+import common "go-presscall/pb/common"
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal

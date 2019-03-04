@@ -43,7 +43,7 @@ func masterConnect(host string, port uint32, timeout int)(net.Conn, error){
 }
 
 
-func sendMsg(p net.Conn, msg []byte) error {
+func SendMsg(p net.Conn, msg []byte) error {
     if len(msg) == 0 {
         return errors.New("send msg to master is null")
     }
@@ -56,7 +56,7 @@ func sendMsg(p net.Conn, msg []byte) error {
     return nil
 }
 
-func recvMsg(p net.Conn, msg []byte) (int, error) {
+func RecvMsg(p net.Conn, msg []byte) (int, error) {
     temp := make([]byte, 1024)
     msg_len := 0
     check_result := 0

@@ -41,7 +41,7 @@ type MasterSimpleResponse struct {
 }
 */
 
-func addMagicBodySize(msg []byte) []byte {
+func AddMagicBodySize(msg []byte) []byte {
     new_msg_data := make([]byte, 8)
     msg_size := len(msg)
 
@@ -78,7 +78,7 @@ func SendPbReq(req proto.Message, rsp proto.Message) (err error) {
         return err
 	}
 
-	fullData := addMagicBodySize(data)
+	fullData := AddMagicBodySize(data)
 
 	conn, err := masterConnect(SendConf.Ip, SendConf.Port, 15)
     if err != nil {
@@ -86,13 +86,13 @@ func SendPbReq(req proto.Message, rsp proto.Message) (err error) {
     }
 	defer conn.Close()
 	
-	err = sendMsg(conn, fullData)
+	err = SendMsg(conn, fullData)
     if err != nil {
         return err
 	}
 	
 	recv_buf := make([]byte, 1024)
-    recv_len, err := recvMsg(conn, recv_buf)
+    recv_len, err := RecvMsg(conn, recv_buf)
     if err != nil {
         return err
 	}

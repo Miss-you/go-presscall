@@ -2,54 +2,139 @@ package main
 
 import (
 	"fmt"
-	"apigw-contrib/util/conf"
-	"github.com/Miss-you/go-presscall/pb/tgwadm"
-	"github.com/Miss-you/go-presscall/sendpb"
+	//"github.com/Miss-you/go-presscall/pb/tgwadm"
+	//"github.com/Miss-you/go-presscall/sendpb"
+	"go-presscall/pb/tgwadm"
+	"go-presscall/sendpb"
 	"os"
 	"encoding/json"
+	"net"
+	"log"
+	"github.com/golang/protobuf/proto" 
 )
 
-type OneOperationInfo struct {
-	OpType	string
-}
-
 type PresscallInfo struct {
-	OpList []OneOperationInfo
+	ClientType string
 }
 
-var PressConf PresscallInfo
-var svrRsp tgwadm.CtrlMsg
+type ServerRspInfo struct {
+	RspList []ServerPbRspInfo `json:"rsp_list"`
+}
+
+type ServerPbRspInfo struct {
+	PbType uint32 `json:"type"`
+	PbMsg tgwadm.CtrlMsg `json:"msg"`
+}
+
+var presscallConf PresscallInfo
 
 func main() {
-	//init conf
-	err := conf.InitConfig("presscall.conf", &PressConf)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
+	ReadJson("presscall.json", &presscallConf)
+	if presscallConf.ClientType == "client" {
+		tcpClient()
+	} else if presscallConf.ClientType == "server" {
+		tcpServer()
+	} else {
+		fmt.Println("invalid ClientType. need client or server.")
 	}
 
+	return
+}
+
+func tcpClient() {
 	var req tgwadm.CtrlMsg 
-	var rsp tgwadm.CtrlMsg
+	var rsp tgwadm.CtrlMsg 
 	ReadJson("pb.json", &req)
 	fmt.Println(req)
-
-	ReadJson("svrpb.json", &svrRsp)
-	fmt.Println(svrRsp)
-
-	//tmp, _ := json.Marshal(req)
-	//fmt.Println(string(tmp))
-
-	//ctrlMsg
-	err = sendpb.SendPbReq(&req, &rsp)
+	err := sendpb.SendPbReq(&req, &rsp)
 	if err != nil {
 		fmt.Println(err)
 		return
 	}
 	fmt.Println("rsp: ", rsp)
-	
-	fmt.Println("Hello world.")
+
+	return
 }
 
+var rspMap map[uint32]tgwadm.CtrlMsg
+//tcp server.
+func tcpServer() {
+	var rspList ServerRspInfo
+	ReadJson("svrpb.json", &rspList)
+	fmt.Println(rspList)
+
+	rspMap = make(map[uint32]tgwadm.CtrlMsg)
+	for i, _ := range rspList.RspList {
+		rspMap[rspList.RspList[i].PbType] = rspList.RspList[i].PbMsg
+	}
+
+	listen_sock, err := net.Listen("tcp", ":8001")
+    if err != nil {
+		log.Fatal("init tcp service failed.")
+	}
+    defer listen_sock.Close()
+
+    for {
+        new_conn, err := listen_sock.Accept()
+        if err != nil {
+            continue    
+        }
+        go recvConnMsg(new_conn)
+    }
+}
+
+func recvConnMsg(conn net.Conn) {
+	var req tgwadm.CtrlMsg
+	buf := make([]byte, 2048) 
+	defer conn.Close()
+	for {
+		recvLen, err := sendpb.RecvMsg(conn, buf)
+		if err != nil {
+			fmt.Println("recvConnMsg err: ", err)
+			return
+		}
+
+		//fmt.Println(buf)
+
+		err = proto.Unmarshal(buf[8:recvLen], &req)
+		if err != nil {
+			fmt.Println("marshal req err: ", err)
+			return
+		}
+
+		fmt.Println("req: ", req)
+
+		rsp, ok := rspMap[*req.Header.CmdType]
+		if !ok {
+			data, err := proto.Marshal(&req)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fullData := sendpb.AddMagicBodySize(data)
+			err = sendpb.SendMsg(conn, fullData)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		} else {
+			fmt.Println("rsp: ", rsp)
+			data, err := proto.Marshal(&rsp)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			fullData := sendpb.AddMagicBodySize(data)
+			err = sendpb.SendMsg(conn, fullData)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+		}
+	}   
+}
 
 func ReadJson(confPath string, confVar interface{}) error {
 	file, err := os.Open(confPath)
@@ -81,48 +166,4 @@ func ReadJson(confPath string, confVar interface{}) error {
 	}
 
 	return nil
-}
-
-
-//tcp server.
-func tcpServer() {
-    listen_sock, err := net.Listen("tcp", ":8001")
-    if err != nil {
-		log.Fatal("init tcp service failed.")
-	}
-    defer listen_sock.Close()
-
-    for {
-        new_conn, err := listen_sock.Accept()
-        if err != nil {
-            continue    
-        }
-        go recvConnMsg(new_conn)
-    }
-}
-
-
-func recvConnMsg(conn net.Conn) {
-	buf := make([]byte, 2048) 
-	defer conn.Close()
-	for {
-		_, err := sendpb.recvMsg(conn, buf)
-		if err != nil {
-			fmt.Println("recvConnMsg err: ", err)
-			return
-		}
-
-		data, err := proto.Marshal(svrRsp)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-
-		fullData := sendpb.addMagicBodySize(data)
-		err = sendpb.sendMsg(conn, fullData)
-		if err != nil {
-			fmt.Println(err)
-			return err
-		}
-	}   
 }
